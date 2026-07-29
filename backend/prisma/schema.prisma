@@ -1,7 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +6,90 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+//ENUMS
+
+enum Role {
+  ADMIN //מנהל 
+  USER //משתמש
+}
+
+enum ItemStatus {
+  AVAILABLE //זמין
+  LOANED //מושאל 
+  MAINTENANCE //בתחזוקה
+  DISABLED //לא אפשרי
+}
+
+enum LoanStatus {
+  ACTIVE //פעיל
+  RETURNED //הוחזר 
+  LATE // באיחור
+  CANCELLED //בוטל 
+}
+//Models
+
+model User {
+  id        Int    @id @default(autoincrement())
+  fullName  String
+  email     String @unique
+  password  String
+  role      Role
+
+  loans Loan[]
+}
+
+model Instructor {
+  id              Int    @id @default(autoincrement())
+  fullName        String
+  phone           String
+  teachingSchool  String
+  studentSchool   String
+
+  loans Loan[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+
+  items Item[]
+}
+
+model Item {
+  id             Int        @id @default(autoincrement())
+  name           String //שם
+  description    String? //תיאור
+  catalogNumber  Int //מספר קיטלוג
+  unitNumber     Int? // מספר יחידה
+  status         ItemStatus @default(AVAILABLE) // סטטוס
+
+  categoryId     Int // קטגוריה
+  category       Category   @relation(fields: [categoryId], references: [id])
+
+  loans Loan[] 
+
+  @@unique([catalogNumber, unitNumber]) // הצירוף של שניהם ביחד צריך להיות ייחודי
+}
+
+model Loan {
+  id Int @id @default(autoincrement())
+
+  instructorId Int
+  instructor   Instructor @relation(fields: [instructorId], references: [id])
+
+  recordedById Int
+  recordedBy   User @relation(fields: [recordedById], references: [id])
+
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id])
+
+  loanDate   DateTime @default(now())
+  dueDate    DateTime
+  returnDate DateTime?
+
+  status LoanStatus @default(ACTIVE)
+
+  notes String?
 }
